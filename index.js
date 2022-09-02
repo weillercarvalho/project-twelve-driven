@@ -24,9 +24,6 @@ const server = express();
 server.use(cors());
 server.use(express.json());
 
-
-
-
 const userExist = async (name) => {
     
     try {
@@ -65,7 +62,7 @@ server.get(`/participants`,async (req,res) => {
 })
 server.post(`/messages`,async (req,res) => {
     const {to, text, type} = req.body
-    const user = req.headers.user
+    const {user} = req.headers
     const messagesSchema = joi.object({
         to: joi.string().min(1).max(30).required(),
         text: joi.string().min(1).max(30).required(),
@@ -74,6 +71,9 @@ server.post(`/messages`,async (req,res) => {
     const validation = messagesSchema.validate(req.body);
     if (validation.error) {
         return res.sendStatus(422)
+    }
+    else if (await userExist(user) === 0) {
+        return res.status(422).send({message:`Nome de participante inexistente.`})
     }
     await db.collection("messages").insertOne({to: to, text: text, type: type, from: user, time: date})
     res.sendStatus(201)
