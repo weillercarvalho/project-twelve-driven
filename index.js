@@ -37,7 +37,6 @@ const userExist = async (name) => {
 }
 server.post(`/participants`,async (req,res) => {
     const { name } = req.body;
-    console.log(req.body)
     const postSchema = joi.object({
         name: joi.string().min(1).max(30).required()
     })
