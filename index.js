@@ -46,29 +46,6 @@ const userExist = async (name) => {
 
 }
 
-const validatedUserto = async (name) => {
-    
-    try {
-        const finding = await db.collection(`messages`).find().toArray();
-        const newFinding = finding.filter(value => value.to === name).length;
-        return newFinding;
-    } catch (error) {
-        return console.error(`Erro.`);
-    }
-
-}
-
-const validatedUserfrom = async (name) => {
-    
-    try {
-        const finding = await db.collection(`messages`).find().toArray();
-        const newFinding = finding.filter(value => value.from === name).length;
-        return newFinding;
-    } catch (error) {
-        return console.error(`Erro.`);
-    }
-
-}
 server.post(`/participants`,async (req,res) => {
     const { name } = req.body;
     const validation = postSchema.validate(req.body);
@@ -114,7 +91,7 @@ server.post(`/messages`,async (req,res) => {
         return res.sendStatus(500)
     }
 })
-//QUERY STRING GET MESSAGES PAREI AQUI.
+
 server.get(`/messages`, async (req,res) => {
     const {limit} = req.query;
     const {user} = req.headers;
