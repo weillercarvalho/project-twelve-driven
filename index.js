@@ -8,7 +8,8 @@ import dotenv from "dotenv"
 
 dotenv.config();
 
-const timestamp = Date.now()
+const timestamp = Date.now();
+const now = Date.now();
 const date = dayjs().format('hh:mm:ss')
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
@@ -119,8 +120,28 @@ server.get(`/messages`, async (req,res) => {
     }
 
 })
-server.post(`/status`,(req,res) => {
-    res.send({message: `OK!`})
+server.post(`/status`,async (req,res) => {
+    const {user} = req.headers;
+    if (await userExist(user) === 0) {
+        return res.sendStatus(404)
+    }
+    try {
+        const finder = await db.collection(`participants`).find().toArray()
+        const findingLastStatus = finder.filter(value => {
+            if (value.name === user) {
+                return value;
+            }
+        })
+        console.log(findingLastStatus)
+
+        await db.collection(`participants`).updateOne({name: user},{$set:now})
+
+        return res.sendStatus(200)
+
+    } catch (error) {
+        return res.sendStatus(500)
+    }
+    
 })
 
 
