@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import joi from "joi";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br.js";
@@ -71,10 +71,9 @@ const userExist = async (name) => {
 
 server.post(`/participants`,async (req,res) => {
     const { name } = req.body;
-    const namelower = name.toLowerCase()
     const validation = postSchema.validate(req.body);
 
-    if(await userExist(namelower) > 0) {
+    if(await userExist(name) > 0) {
         return res.sendStatus(409);
     }
     else if (validation.error) {
@@ -167,7 +166,23 @@ server.post(`/status`,async (req,res) => {
     }
     
 })
-
+server.delete(`/messages/:id`, async (req,res) => {
+    const {user} = req.headers;
+    const {id} = req.params;
+    if (await userExist(user) <= 0) {
+        return res.sendStatus(401);
+    }
+    try {
+            const finder = await db.collection('messages').findOne({_id: ObjectId(id)})
+            if (!finder) {
+                res.sendStatus(404);
+            }
+            await db.collection('messages').deleteOne({_id: ObjectId(id)})
+            return res.sendStatus(200);
+    } catch (error) {
+        return res.sendStatus(500);
+    }
+})
 
 
 
