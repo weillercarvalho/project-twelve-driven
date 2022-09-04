@@ -45,11 +45,11 @@ setInterval(async () => {
                     to: "Todos",
                     text: "sai da sala",
                     type: "status",
-                    time: timestamp,
+                    time: dayjs().format("hh:mm:ss"),
                 }
             })
-            await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
             await db.collection('participants').insertMany(findingserMap)
+            await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
         }
     } catch (error) {
         return console.error(`Error in the process of removing`)
