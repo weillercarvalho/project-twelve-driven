@@ -9,8 +9,7 @@ import dotenv from "dotenv"
 dotenv.config();
 
 const timestamp = Date.now();
-const now = Date.now();
-const date = dayjs().format('hh:mm:ss')
+
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 
@@ -35,6 +34,29 @@ const messagesSchema = joi.object({
     type: joi.string().valid('message','private_message').required()
 })
 
+setInterval(async () => {
+    const time = Date.now() - 10000;
+    try {
+        const findingUser = await db.collection('participants').find({lastStatus: {$lte: time}}).toArray();
+        if (findingUser.length > 0) {
+            const findingserMap = findingUser.map(value => {
+                return {
+                    from: value.name,
+                    to: "Todos",
+                    text: "sai da sala",
+                    type: "status",
+                    time: timestamp,
+                }
+            })
+            await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
+            await db.collection('participants').insertMany(findingserMap)
+        }
+    } catch (error) {
+        return console.error(`Error in the process of removing`)
+    }
+}
+,15000)
+
 const userExist = async (name) => {
     
     try {
@@ -49,20 +71,22 @@ const userExist = async (name) => {
 
 server.post(`/participants`,async (req,res) => {
     const { name } = req.body;
+    const namelower = name.toLowerCase()
     const validation = postSchema.validate(req.body);
 
-    if(await userExist(name) > 0) {
+    if(await userExist(namelower) > 0) {
         return res.sendStatus(409);
     }
     else if (validation.error) {
         return res.sendStatus(422);
     }
-    else if(await userExist(name) === 0) {
-        await db.collection("participants").insertOne({from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: date});
-    }
     try {
-        await db.collection("participants").insertOne({name: name, lastStatus: timestamp});
-        return res.sendStatus(201);
+        if(await userExist(name) === 0) {
+            await db.collection("participants").insertOne({from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format("hh:mm:ss")});
+            await db.collection("participants").insertOne({name: name, lastStatus: Date.now()});
+            return res.sendStatus(201);
+    }
+
     } catch (error) {
         return res.sendStatus(500);
     }
@@ -86,7 +110,7 @@ server.post(`/messages`,async (req,res) => {
         return res.status(422).send({message:`Nome de participante inexistente.`})
     }
     try {
-        await db.collection("messages").insertOne({to: to, text: text, type: type, from: user, time: date})
+        await db.collection("messages").insertOne({to: to, text: text, type: type, from: user, time: dayjs().format("hh:mm:ss")})
         return res.sendStatus(201)
     } catch (error) {
         return res.sendStatus(500)
@@ -134,7 +158,7 @@ server.post(`/status`,async (req,res) => {
         })
         console.log(findingLastStatus)
 
-        await db.collection(`participants`).updateOne({name: user},{$set:now})
+        await db.collection(`participants`).updateOne({name: user},{$set:Date.now()})
 
         return res.sendStatus(200)
 
