@@ -11,6 +11,7 @@ dotenv.config();
 
 server.use(cors());
 server.use(express.json());
+const server = express();
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 
@@ -19,8 +20,6 @@ let db;
 mongoClient.connect().then(() => {
     db = mongoClient.db(`uol`)
 })
-
-const server = express();
 
 const postSchema = joi.object({
     name: joi.string().min(1).max(30).required()
