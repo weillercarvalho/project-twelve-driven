@@ -9,6 +9,9 @@ import {stripHtml} from "string-strip-html";
 
 dotenv.config();
 
+server.use(cors());
+server.use(express.json());
+
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 
 let db;
@@ -18,9 +21,6 @@ mongoClient.connect().then(() => {
 })
 
 const server = express();
-
-server.use(cors());
-server.use(express.json());
 
 const postSchema = joi.object({
     name: joi.string().min(1).max(30).required()
