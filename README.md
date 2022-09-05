@@ -1,4 +1,4 @@
-# Tweteroo
+# Uol
 
 A basic project focused in the creation of a basic API using express, mongoDB as database, and some others libs as joi for validation, strip-string for data sanitization.
 
