@@ -23,12 +23,12 @@ mongoClient.connect().then(() => {
 })
 
 const postSchema = joi.object({
-    name: joi.string().min(1).max(30).required()
+    name: joi.string().empty(" ").min(1).max(30).required()
 })
 
 const messagesSchema = joi.object({
-    to: joi.string().min(1).max(30).required(),
-    text: joi.string().min(1).required(),
+    to: joi.string().empty(" ").min(1).max(30).required(),
+    text: joi.string().empty(" ").min(1).required(),
     type: joi.string().valid('message','private_message').required()
 })
 
