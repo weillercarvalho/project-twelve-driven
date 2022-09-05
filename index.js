@@ -4,12 +4,10 @@ import { MongoClient, ObjectId } from "mongodb";
 import joi from "joi";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br.js";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
+import {stripHtml} from "string-strip-html";
 
 dotenv.config();
-
-const timestamp = Date.now();
-
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 
@@ -72,17 +70,17 @@ const userExist = async (name) => {
 server.post(`/participants`,async (req,res) => {
     const { name } = req.body;
     const validation = postSchema.validate(req.body);
-
-    if(await userExist(name) > 0) {
+    const newname = stripHtml(name).result.trim();
+    if(await userExist(newname) > 0) {
         return res.sendStatus(409);
     }
     else if (validation.error) {
         return res.sendStatus(422);
     }
     try {
-        if(await userExist(name) === 0) {
-            await db.collection("participants").insertOne({from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format("hh:mm:ss")});
-            await db.collection("participants").insertOne({name: name, lastStatus: Date.now()});
+        if(await userExist(newname) === 0) {
+            await db.collection("participants").insertOne({from: newname, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format("hh:mm:ss")});
+            await db.collection("participants").insertOne({name: newname, lastStatus: Date.now()});
             return res.sendStatus(201);
     }
 
@@ -100,16 +98,20 @@ server.get(`/participants`,async (req,res) => {
 server.post(`/messages`,async (req,res) => {
     const {to, text, type} = req.body;
     const {user} = req.headers;
+    const newto = stripHtml(to).result.trim();
+    const newtext = stripHtml(text).result.trim();
+    const newtype = stripHtml(type).result.trim();
+    const newuser = stripHtml(user).result.trim();
 
     const validation = messagesSchema.validate(req.body);
     if (validation.error) {
         return res.sendStatus(422)
     }
-    else if (await userExist(user) === 0) {
+    else if (await userExist(newuser) === 0) {
         return res.status(422).send({message:`Nome de participante inexistente.`})
     }
     try {
-        await db.collection("messages").insertOne({to: to, text: text, type: type, from: user, time: dayjs().format("hh:mm:ss")})
+        await db.collection("messages").insertOne({to: newto, text: newtext, type: newtype, from: newuser, time: dayjs().format("hh:mm:ss")})
         return res.sendStatus(201)
     } catch (error) {
         return res.sendStatus(500)
@@ -149,18 +151,12 @@ server.post(`/status`,async (req,res) => {
         return res.sendStatus(404)
     }
     try {
-        const finder = await db.collection(`participants`).find().toArray()
-        const findingLastStatus = finder.filter(value => {
-            if (value.name === user) {
-                return value;
-            }
-        })
-        console.log(findingLastStatus)
-
-        await db.collection(`participants`).updateOne({name: user},{$set:Date.now()})
-
+        const finder = await db.collection(`participants`).findOne({name: user})
+        if(!finder) {
+            return res.sendStatus(404);
+        }
+        await db.collection(`participants`).updateOne({_id:finder.id},{$set:{...finder,lastStatus: Date.now()}})
         return res.sendStatus(200)
-
     } catch (error) {
         return res.sendStatus(500)
     }
@@ -170,7 +166,7 @@ server.delete(`/messages/:id`, async (req,res) => {
     const {user} = req.headers;
     const {id} = req.params;
     if (await userExist(user) <= 0) {
-        return res.sendStatus(401);
+        return res.sendStatus(422);
     }
     try {
             const finder = await db.collection('messages').findOne({_id: ObjectId(id)})
@@ -183,18 +179,30 @@ server.delete(`/messages/:id`, async (req,res) => {
         return res.sendStatus(500);
     }
 })
-
-
-
-
-
-
-
-
-
-
-
-
+server.put(`/messages/:id`, async (req,res) => {
+    const {user} = req.headers;
+    const {id} = req.params;
+    const validation = messagesSchema.validate(req.body)
+    if (await userExist(user) <= 0) {
+        return res.sendStatus(422)
+    }
+    else if (validation.error) {
+        return res.sendStatus(422)
+    }
+    try {
+        const findmessage = await db.collection(`messages`).findOne({_id: ObjectId(id)})
+        if (!findmessage) {
+            return res.sendStatus(404)
+        }
+        else if (findmessage.from !== user) {
+            return res.sendStatus(401)
+        }
+        await db.collection(`messages`).updateOne({_id: ObjectId(id)},{$set: req.body});
+        return res.sendStatus(200)
+    } catch (error) {
+        return res.sendStatus(500)
+    }
+})
 server.listen(5000,() => {
     console.log(`Listening on port 5000`)
 })
