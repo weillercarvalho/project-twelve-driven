@@ -9,9 +9,10 @@ import {stripHtml} from "string-strip-html";
 
 dotenv.config();
 
+const server = express();
 server.use(cors());
 server.use(express.json());
-const server = express();
+
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 
