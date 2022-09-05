@@ -32,28 +32,28 @@ const messagesSchema = joi.object({
     type: joi.string().valid('message','private_message').required()
 })
 
-// setInterval(async () => {
-//     const time = Date.now() - 10000;
-//     try {
-//         const findingUser = await db.collection('participants').find({lastStatus: {$lte: time}}).toArray();
-//         if (findingUser.length > 0) {
-//             const findingserMap = findingUser.map(value => {
-//                 return {
-//                     from: value.name,
-//                     to: "Todos",
-//                     text: "sai da sala",
-//                     type: "status",
-//                     time: dayjs().format("hh:mm:ss"),
-//                 }
-//             })
-//             await db.collection('participants').insertMany(findingserMap)
-//             await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
-//         }
-//     } catch (error) {
-//         return console.error(`Error in the process of removing`)
-//     }
-// }
-// ,15000)
+setInterval(async () => {
+    const time = Date.now() - 10000;
+    try {
+        const findingUser = await db.collection('participants').find({lastStatus: {$lte: time}}).toArray();
+        if (findingUser.length > 0) {
+            const findingserMap = findingUser.map(value => {
+                return {
+                    from: value.name,
+                    to: "Todos",
+                    text: "sai da sala",
+                    type: "status",
+                    time: dayjs().format("hh:mm:ss"),
+                }
+            })
+            await db.collection('participants').insertMany(findingserMap)
+            await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
+        }
+    } catch (error) {
+        return console.error(`Error in the process of removing`)
+    }
+}
+,15000)
 
 const userExist = async (name) => {
     
