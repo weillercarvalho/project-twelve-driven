@@ -132,7 +132,7 @@ server.get(`/messages`, async (req,res) => {
                 return value;
             }
         })
-        if (limit !== undefined && Number(limit) !== NaN) {
+        if (limit !== undefined) {
             const numberLimit = newReceived.splice(-(Number(limit)));
             return res.send(numberLimit)
         }
