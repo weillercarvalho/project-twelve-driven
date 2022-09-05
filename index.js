@@ -32,34 +32,46 @@ const messagesSchema = joi.object({
     type: joi.string().valid('message','private_message').required()
 })
 
-setInterval(async () => {
-    const time = Date.now() - 10000;
-    try {
-        const findingUser = await db.collection('participants').find({lastStatus: {$lte: time}}).toArray();
-        if (findingUser.length > 0) {
-            const findingserMap = findingUser.map(value => {
-                return {
-                    from: value.name,
-                    to: "Todos",
-                    text: "sai da sala",
-                    type: "status",
-                    time: dayjs().format("hh:mm:ss"),
-                }
-            })
-            await db.collection('participants').insertMany(findingserMap)
-            await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
-        }
-    } catch (error) {
-        return console.error(`Error in the process of removing`)
-    }
-}
-,15000)
+// setInterval(async () => {
+//     const time = Date.now() - 10000;
+//     try {
+//         const findingUser = await db.collection('participants').find({lastStatus: {$lte: time}}).toArray();
+//         if (findingUser.length > 0) {
+//             const findingserMap = findingUser.map(value => {
+//                 return {
+//                     from: value.name,
+//                     to: "Todos",
+//                     text: "sai da sala",
+//                     type: "status",
+//                     time: dayjs().format("hh:mm:ss"),
+//                 }
+//             })
+//             await db.collection('participants').insertMany(findingserMap)
+//             await db.collection('participants').deleteMany({lastStatus: {$lte: time}});
+//         }
+//     } catch (error) {
+//         return console.error(`Error in the process of removing`)
+//     }
+// }
+// ,15000)
 
 const userExist = async (name) => {
     
     try {
         const finding = await db.collection(`participants`).find().toArray();
         const newFinding = finding.filter(value => value.name === name).length;
+        return newFinding;
+    } catch (error) {
+        return console.error(`Erro.`);
+    }
+
+}
+
+const userExistDel = async (name) => {
+    
+    try {
+        const finding = await db.collection(`participants`).find().toArray();
+        const newFinding = finding.filter(value => value.from === name).length;
         return newFinding;
     } catch (error) {
         return console.error(`Erro.`);
@@ -91,9 +103,14 @@ server.post(`/participants`,async (req,res) => {
 })
 server.get(`/participants`,async (req,res) => {
 
-    const list = await db.collection("participants").find().toArray();
-    const newList = list.map(value => ({...value,_id: undefined}));
-    res.send(newList);
+    try {
+        const list = await db.collection("participants").find().toArray();
+        res.send(list);
+    } catch (error) {
+        res.sendStatus(500)    
+    }
+
+ 
 })
 server.post(`/messages`,async (req,res) => {
     const {to, text, type} = req.body;
@@ -124,8 +141,7 @@ server.get(`/messages`, async (req,res) => {
 
     try {
         const list = await db.collection("messages").find().toArray();
-        const newList = list.map(value => ({...value,_id: undefined}))
-        const newReceived = newList.filter(value => {
+        const newReceived = list.filter(value => {
             if ((value.to === user || value.from === user) && value.type === "private_message") {
                 return value;
             }
@@ -164,16 +180,16 @@ server.post(`/status`,async (req,res) => {
 })
 server.delete(`/messages/:id`, async (req,res) => {
     const {user} = req.headers;
-    const {id} = req.params;
-    if (await userExist(user) <= 0) {
-        return res.sendStatus(422);
+    const id = req.params.id;
+    if (await userExistDel(user) <= 0) {
+        return res.sendStatus(401);
     }
     try {
             const finder = await db.collection('messages').findOne({_id: ObjectId(id)})
             if (!finder) {
                 return res.sendStatus(404);
             }
-            await db.collection('messages').deleteOne({_id: ObjectId(id)})
+            await db.collection('messages').deleteOne({_id: ObjectId(finder._id)})
             return res.sendStatus(200);
     } catch (error) {
         return res.sendStatus(500);
