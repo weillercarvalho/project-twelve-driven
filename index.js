@@ -171,7 +171,7 @@ server.delete(`/messages/:id`, async (req,res) => {
     try {
             const finder = await db.collection('messages').findOne({_id: ObjectId(id)})
             if (!finder) {
-                res.sendStatus(404);
+                return res.sendStatus(404);
             }
             await db.collection('messages').deleteOne({_id: ObjectId(id)})
             return res.sendStatus(200);
